@@ -1,0 +1,193 @@
+# configs/config.yaml
+cuda_visible_devices: [0,1]
+training_model: "/data3/logs/Baseline/"
+# training_dataset: "Vaihingen"
+# training_dataset: "Potsdam"
+training_dataset: "Ordos_2000"
+seed: 42
+# folder: "/data3/wsjdataset/Vaihingen_unzip/ISPRS_semantic_labeling_Vaihingen.zip/"  # your dataset path
+# folder: "/data3/wsjdataset/OpenDataLab_Potsdam/raw"  # your dataset path
+folder: "/data3/wsjdataset" 
+hydra:
+  run:
+    dir: "${training_model}_${training_dataset}_${seed}/${now:%Y-%m-%d_%H-%M-%S}"
+  job:
+    chdir: true
+  job_logging:
+    capture_stdout: true
+
+model:
+  pretrained: true
+  model_dim: 512
+  num_heads: 8
+  ffn_dim: 2048
+  dropout: 0.5
+  num_layers: 1
+  backbone: "mit_b4"
+  decoder_embed_dim: 512
+  pretrained_backbone: "/home/wsj/CAF-Net-KD/pretrained/mit_b4.pth"
+  bn_eps: 0.01
+  bn_momentum: 0.01
+  prompt_semantic:
+    enabled: true
+    model_name: "ViT-B-32"
+    pretrained: "openai"
+    image_size: 224
+  vlsp:
+    enable: true
+    stages: [3,4]
+    type: "clip_text_guided_modulation"
+
+  fdr:
+    enable: true
+    stages: [2]
+    mode: "wavelet"    
+  cca:
+    enable: true
+    position: "post_fusion"
+    loss_weight: 1.0
+    loss_type: "cosine"
+
+training:
+  epochs: 100
+  save_epoch: 1
+  batch_size: 10
+  learning_rate: 0.01
+  weight_decay: 0.0005
+  momentum: 0.9
+  milestones: [ 25, 35, 45 ]
+  window_size: [ 256, 256 ]
+  num_workers: 0
+  cache: True
+  augmentation: True
+  alpha: 0.01
+  beta: 0.05
+  gamma: 0.5
+  semantic_weight: 0.0
+
+dataset:
+  name: ${training_dataset}
+  datasets:
+    Vaihingen:
+      name: "Vaihingen"
+      labels: [ "roads", "buildings", "low veg.", "trees", "cars", "clutter" ]
+      n_classes: 6
+      stride_size: 32
+      main_folder: "${folder}"
+      data_folder: "${.main_folder}/top/top_mosaic_09cm_area{}.tif"
+      dsm_folder: "${.main_folder}/dsm/dsm_09cm_matching_area{}.tif"
+      label_folder: "${.main_folder}/gts_for_participants/top_mosaic_09cm_area{}.tif"
+      eroded_folder: "${.main_folder}/gts_eroded_for_participants/top_mosaic_09cm_area{}_noBoundary.tif"
+      train_ids: [ '1', '3', '23', '26', '7', '11', '13', '28', '17', '32', '34', '37' ]
+      test_ids: [ '5', '21', '15', '30' ]
+      num_train_imgs: 10000
+      palette:
+        0: [ 255, 255, 255 ]  # Impervious surfaces (white)
+        1: [ 0, 0, 255 ]      # Buildings (blue)
+        2: [ 0, 255, 255 ]    # Low vegetation (cyan)
+        3: [ 0, 255, 0 ]      # Trees (green)
+        4: [ 255, 255, 0 ]    # Cars (yellow)
+        5: [ 255, 0, 0 ]      # Clutter (red)
+        6: [ 0, 0, 0 ]        # Undefined (black)
+    Potsdam:
+      name: "Potsdam"
+      labels: [ "roads", "buildings", "low veg.", "trees", "cars", "clutter" ]
+      n_classes: 6
+      stride_size: 128
+      main_folder: "${folder}/Potsdam/"
+      data_folder: "${.main_folder}/4_Ortho_RGBIR/top_potsdam_{}_RGBIR.tif"
+      dsm_folder: "${.main_folder}/1_DSM_normalisation/dsm_potsdam_{}_normalized_lastools.jpg"
+      label_folder: "${.main_folder}/5_Labels_for_participants/top_potsdam_{}_label.tif"
+      eroded_folder: "${.main_folder}/5_Labels_for_participants_no_Boundary/top_potsdam_{}_label_noBoundary.tif"
+      train_ids: [ '6_10', '7_10', '2_12', '3_11', '2_10', '7_8', '5_10', '3_12', '5_12', '7_11', '7_9', '6_9', '7_7', '4_12', '6_8', '6_12', '6_7', '4_11' ]
+      test_ids: [ '4_10', '5_11', '2_11', '3_10', '6_11', '7_12' ]
+      num_train_imgs: 10000
+      palette:
+        0: [ 255, 255, 255 ]  # Impervious surfaces (white)
+        1: [ 0, 0, 255 ]      # Buildings (blue)
+        2: [ 0, 255, 255 ]    # Low vegetation (cyan)
+        3: [ 0, 255, 0 ]      # Trees (green)
+        4: [ 255, 255, 0 ]    # Cars (yellow)
+        5: [ 255, 0, 0 ]      # Clutter (red)
+        6: [ 0, 0, 0 ]        # Undefined (black)
+    Ordos:
+      name: "Ordos"
+      labels: [ "road", "slope", "forest", "building", "water", "clutter" ]
+      n_classes: 6
+      stride_size: 32
+      main_folder: "${folder}/Ordos"
+      data_folder: "${.main_folder}/top/DOM_{}.png"       
+      dsm_folder: "${.main_folder}/dsm/DSM_{}.tif"        
+      label_folder: "${.main_folder}/label/DOM_{}.png"
+      eroded_folder: null
+      train_ids: [
+        "r4096_c7168",
+        "r2048_c2048",
+        "r1024_c0",
+        "r4096_c5120",
+        "r7168_c2048",
+        "r5120_c7168",
+        "r0_c6144",
+        "r3072_c7168",
+        "r5120_c4096",
+        "r2048_c4096",
+        "r4096_c1024",
+        "r5120_c6144",
+        "r3072_c5120",
+        "r2048_c1024",
+        "r7168_c3072",
+        "r1024_c3072",
+        "r2048_c3072",
+        "r2048_c5120",
+        "r5120_c2048",
+        "r4096_c2048",
+        "r3072_c6144",
+        "r6144_c4096",
+        "r6144_c7168",
+        "r0_c3072",
+        "r6144_c3072",
+        "r4096_c0",
+        "r4096_c4096",
+        "r0_c5120",
+        "r4096_c6144",
+        "r2048_c6144",
+        "r2048_c7168",
+        "r3072_c3072",
+        "r7168_c4096",
+        "r3072_c0",
+        "r1024_c1024",
+        "r0_c1024",
+        "r1024_c6144",
+        "r5120_c3072",
+        "r7168_c7168",
+        "r6144_c2048",
+        "r7168_c5120",
+        "r0_c2048",
+        "r6144_c1024",
+        "r4096_c3072",
+      ]
+      test_ids: [
+        "r3072_c1024",
+        "r7168_c6144",
+        "r3072_c2048",
+        "r6144_c5120",
+        "r5120_c5120",
+        "r1024_c2048",
+        "r2048_c0",
+        "r0_c0",
+        "r0_c4096",
+        "r1024_c5120",
+        "r7168_c1024",
+        "r1024_c4096",
+        "r6144_c6144",
+        "r3072_c4096",
+        "r5120_c1024",
+      ]
+      num_train_imgs: 2000
+      palette:
+        0: [255, 0, 0]      # road
+        1: [0, 255, 0]      # slope
+        2: [0, 0, 255]      # forest
+        3: [255, 0, 255]    # building
+        4: [0, 255, 255]    # water
+        5: [0, 0, 0]        # clutter
