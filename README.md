@@ -1,6 +1,6 @@
 # HSF-Net
 
-Official implementation of **HSF-Net: Hierarchical Structure-Semantics Fusion Network for RGB-DSM Remote Sensing Semantic Segmentation**.
+Official implementation of **HSF-Net**.
 
 ## ⚙️ Installation & Dependencies
 
