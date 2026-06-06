@@ -5,7 +5,7 @@ Official implementation of **HSF-Net: Hierarchical Structure-Semantics Fusion Ne
 ## ⚙️ Installation & Dependencies
 
 ```bash
-git clone https://github.com/knot1/HSF-Net.git
+git clone 
 cd HSF-Net
 
 conda env create -f requirements.yml
